@@ -464,24 +464,47 @@ class Bond:
 
         return option_price
 
-    def evaluate_and_adjust_cash_flows(self):
-        if not self.callable and not self.puttable:
-            return  # No adjustment needed if the bond is neither callable nor puttable
+    
+    def OAS_calculation(self):
+        """
+        Calculates the option-adjusted spread (OAS) of a bond.
 
-        # Assume exercise_date is a list of dates when the option can be exercised
-        for date in self.exercise_dates:
-            option_value = self.option_valuation(date)
-            if self.callable and option_value > 0:
-                
-                ### Logic to adjust cash flows for callable bond
-                
-                self.adjust_cash_flows_for_call(date)
-            elif self.puttable and option_value > 0:
-                
-                ### Logic to adjust cash flows for putable bond
-                
-                self.adjust_cash_flows_for_put(date)
+        The option-adjusted spread (OAS) is the spread over the risk-free rate that makes the price of a bond equal to the present value of its cash flows, including the embedded option. 
+        It is a measure of the yield spread that can be used to price a bond with an embedded option, such as a callable bond or a putable bond.
 
+        Parameters:
+        - settlement: The settlement date of the bond.
+        - maturity: The maturity date of the bond.
+        - coupon_rate: The annual coupon rate.
+        - price: The price of the bond per face value.
+        - frequency: The number of coupon payments per year.
+        - r: The risk-free interest rate.
+        - m: The number of compounding periods per year.
+        - option_type: The type of the embedded option ('call' or 'put').
+        - strike_price: The strike price of the embedded option.
+        - exercise_date: The exercise date of the embedded option.
 
+        Returns:
+        - The option-adjusted spread (OAS) of the bond.
+        """
+        if self.option_type is None:
+            raise ValueError("Option type must be specified.")
+        if self.strike_price is None:
+            raise ValueError("Strike price must be specified.")
+        if self.exercise_date is None:
+            raise ValueError("Exercise date must be specified.")
+        if self.r is None:
+            raise ValueError("Risk-free interest rate must be specified.")
+        if self.m is None:
+            raise ValueError("Number of compounding periods per year must be specified.")
 
+        # Calculate the price of the bond without the option
+        bond_price = self.bond_price_vasicek_model(self.r0, self.K, self.theta, self.sigma, self.face_value, self.coupon_rate, self.settlement, self.maturity, self.frequency, self.seed)
+
+        # Calculate the price of the bond with the option
+        option_price = self.binomial_model_option_valuation(self.price, self.strike_price, self.r, self.T, self.N, self.sigma, self.option_type, self.m)
+
+        # Calculate the option-adjusted spread (OAS)
+        oas = self.calculate_ytm() - self.r - option_price / bond_price
+        return oas
 
