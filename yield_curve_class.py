@@ -43,6 +43,26 @@ class YieldCurve:
         if self._spline is None:
             self._spline = CubicSpline(self._maturities, self._rates)
 
+    # this is currently unused, could be useful for future development
+    @staticmethod
+    def format_maturity_labels(maturities):
+        """
+        Format the maturity values to human-readable labels.
+        """
+        labels = []
+        for m in maturities:
+            if m < 1:
+                # Convert to months
+                month = int(round(m * 12))
+                labels.append(f'{month}M')
+            elif m == 1:
+                labels.append('1Y')
+            else:
+                # Convert to years and add 'Y' suffix
+                year = int(round(m))
+                labels.append(f'{year}Y')
+        return labels
+
     def get_rate(self, maturity):
         """
         Calculate the interpolated rate for a given maturity.
@@ -60,10 +80,8 @@ class YieldCurve:
         if self._spline is None:
             self._fit_curve()
 
-        # Make a copy of plot_kwargs to avoid modifying the original
         plot_kwargs = plot_kwargs.copy()
 
-        # Validate plot_kwargs
         valid_plot_kwargs = {'color', 'linestyle', 'marker', 'linewidth', 'markersize'}
         for key in plot_kwargs.keys():
             if key not in valid_plot_kwargs:
@@ -72,18 +90,8 @@ class YieldCurve:
         x = np.arange(start, end + step, step)
         y = self._spline(x)
         plt.plot(x, y, **plot_kwargs)
-        plt.title(plot_kwargs.get('title', 'Yield Curve'))  # Use get instead of pop
+        plt.title(plot_kwargs.get('title', 'Yield Curve'))  
         plt.xlabel('Maturity (Years)')
         plt.ylabel('Rate (%)')
         plt.grid(True)
         plt.show()
-
-
-# Example maturities and rates
-maturities = [1, 2, 3, 5, 7, 10, 20, 30]
-rates = [0.5, 0.7, 0.9, 1.1, 1.3, 1.5, 1.7, 1.8]
-
-# Example use
-yc = YieldCurve(maturities, rates)
-print(f'Rate at maturity 4: {yc.get_rate(4)}')
-yc.plot_curve()
